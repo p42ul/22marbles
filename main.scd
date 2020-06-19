@@ -17,14 +17,15 @@ x = {SinOsc.ar(Array.series(50, 60, 60).clump(2).flop;, 0, 0.1)}.play;
 x.free;
 s.meter;
 
+
 // Stop playback in harmo modes: does it work?
 // Make option to stop loops in the order they appeared.
 // Find a way to make inheritance.
 
-// Pops did not stop with sponge zebra.
 
 (
 {
+	TempoClock.default.tempo_((64.midicps) / 2.pow(7)); // tempo of midinote 64 = 1.2876076441909 bps
 	~scJackName="SuperCollider:out_"; //for Jack connections
 	~scJackNameIn="SuperCollider:in_"; //for Jack connections
 	~reaperInJackName="REAPER:in";
@@ -68,7 +69,7 @@ s.meter;
 	// ~classes = [~cSponge, ~cSimpleSponge];
 		~classes = [~cSponge, ~cSponge];
 	// ~classes = [~cSponge];//, ~cSponge];
-	~transpose = [0, -4];
+	~transpose = [0, 0];
 	~sponges = IdentityDictionary.new();
 	~voices = IdentityDictionary.new();
 
@@ -93,16 +94,16 @@ s.meter;
 				cSponge: ~sponges[sym],
 				notes: ([ \en1, \en2, \en3].keynum.mirror2.clump(3)).flat + ~transpose[j],
 				chords: [
-					[ \en1, \en2, \en3, \en3, \en2, \en1].keynum + ~transpose,
+					[ \en1, \en2, \en3, \en3, \en2, \en1].keynum + ~transpose[j],
 					// [ \fs7, \bn7, \en8, \en7, \bf7, \cn8].keynum - 12,
-					[ \en1, \en2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \dn2, \fs2, \dn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \cn2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \bn1, \an2, \dn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \en2, \cn3, \dn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \dn2, \gn2, \cn3, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \cn2, \gn2, \bn2, \fs3, \bn3].keynum + ~transpose,
-					[ \en1, \dn2, \fs2, \bn2, \en3, \an3].keynum + ~transpose,
+					[ \en1, \en2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \dn2, \fs2, \dn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \cn2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \bn1, \an2, \dn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \en2, \cn3, \dn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \dn2, \gn2, \cn3, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \cn2, \gn2, \bn2, \fs3, \bn3].keynum + ~transpose[j],
+					[ \en1, \dn2, \fs2, \bn2, \en3, \an3].keynum + ~transpose[j],
 					[ \bn0, \en2, \cn2, \dn3, \gn1, \fn2, \an2 ].keynum,
 					[ \an1, \dn2, \en3, \gn2, \bn2, \cn3, \fn1 ].keynum,
 					[ \en1, \dn1, \fn2, \cn2, \bn1, \gn3, \an2 ].keynum,
@@ -259,6 +260,10 @@ s.meter;
 )
 
 ~sponges[\stripes_140].sponge.features[0].gui;
-~voices[\stripes_140][0].interpolator.gui;
+~voices[\stripes_140][0]
+.interpolator.gui;
 
-~voices.at(~stripes)[fmVoice].octVa;
+
+.at(~stripes)[fmVoice].octVa;
+~voices[\stripes_103][0].looper.setQuant(0.5);
+~voices[\stripes_103][0].looper.quant
