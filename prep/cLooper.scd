@@ -4,6 +4,7 @@
 	var recLev = 0.9, preLev = 0.9;
 	var oscFunc, recorder, loopPlayers;
 	var loopDur, nextLoopId=0, task, nextLoopToStop=0;
+	var quant=1.0;
 	var prep = {
 		forkIfNeeded {
 			isRec = false;
@@ -53,7 +54,8 @@
 				var msgId;
 				msgId = msg[2];
 				(msgId == id).if({
-					loopDur = msg[3] / server.sampleRate;
+					// The duration of the loop is quantized to current tempo.
+					loopDur = (msg[3] / server.sampleRate).round(TempoClock.beatDur * quant);
 					loopPlayers[nextLoopId].release(0.2);
 					loopPlayers[nextLoopId] = Synth.after(recorder, \loopPlayer, [
 						\out, outBus,
@@ -118,40 +120,48 @@
 	var toggleRec = {
 		// isPlaying.not.if({
 		isRec.if({
-			recorder.set(\t_trig, 1.0);
-			"Stop rec loop ".post; nextLoopId.postln;
-			isRec = false;
-			task.stop;
-			task.reset;
+			TempoClock.play({
+				recorder.set(\t_trig, 1.0);
+				"Stop rec loop ".post; nextLoopId.postln;
+				isRec = false;
+				task.stop;
+				task.reset;
 
-			NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
+				NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
+			}.inEnvir, quant);
 			// task.postln;
 		},{
 			isPlaying[nextLoopId].if({
 				"Trying to record loop num ".post; nextLoopId.post;
 				", but it is already playing.".postln;
 			}, {
-				recorder = Synth.tail(server, \loopRecorder, [
-					\in, inBus,
-					\buf, recBuffers[nextLoopId],
-					\id, id,
-					\recLev, recLev,
-					\preLev, preLev
-				]);
-				isRec = true;
-				"Starting rec on buf ".post; nextLoopId.postln;
-				NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 1);
-				// Do not record for more than bufDur seconds.
-				task.stop; task.reset; // this may not be necessary. // Double check.
-				task = Task({
-					bufDur.wait;
-					recorder.set(\t_trig, 1.0);
-					"Auto stopping loop rec.".postln;
-					NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
-					isRec = false;
-				}).start;
+				TempoClock.play({
+					recorder = Synth.tail(server, \loopRecorder, [
+						\in, inBus,
+						\buf, recBuffers[nextLoopId],
+						\id, id,
+						\recLev, recLev,
+						\preLev, preLev
+					]);
+					isRec = true;
+					"Starting rec on buf ".post; nextLoopId.postln;
+					NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 1);
+					// Do not record for more than bufDur seconds.
+					task.stop; task.reset; // this may not be necessary. // Double check.
+					task = Task({
+						bufDur.wait;
+						recorder.set(\t_trig, 1.0);
+						"Auto stopping loop rec.".postln;
+						NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
+						isRec = false;
+					}).start;
+				}.inEnvir, quant);
 			});
 		});
+	};
+
+	var setQuant = { |val|
+		quant = val;
 	};
 
 	var freeMe = {
@@ -175,6 +185,8 @@
 		loopPlayers: { loopPlayers },
 		bus: { bus },
 		loopDur: { loopDur },
+		quant: { quant },
+		setQuant: { |event, val| setQuant.value(val) },
 		prep: { prep.value },
 		toggleRec: { toggleRec.value },
 		stopPlayback: { |event, dur| stopPlayback.value(dur) },
