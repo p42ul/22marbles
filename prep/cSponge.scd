@@ -223,9 +223,9 @@
 				buttState: 1
 			);
 			butts.modes[pitchMode].addFunc(
-				button: 8,
+				button: 6,
 				function: {
-					"Stop loop playback 17".post;
+					"Stop loop playback.".postln;
 					~voices.at(defName)[fmVoice].looper.stopPlayback(17);
 				},
 				levels: [1],
@@ -234,12 +234,22 @@
 			butts.modes[pitchMode].addFunc(
 				button: 7,
 				function: {
-					"Stop loop playback single loop.".post;
+					"Stop loop playback single loop.".postln;
 					~voices.at(defName)[fmVoice].looper.stopPlaybackSingleLoop(5);
 				},
 				levels: [1],
 				buttState: 1
 			);
+			butts.modes[pitchMode].addFunc(
+				button: 8,
+				function: {
+					"Undo last loop.".postln;
+					~voices.at(defName)[fmVoice].looper.undoLastLoop(0.1);
+				},
+				levels: [1],
+				buttState: 1
+			);
+
 			// Mode 2 is harmoMode 8, buttons 0 to 4 sets notes of chords.
 			////////////////////////////
 			// ////////////////////// //

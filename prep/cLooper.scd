@@ -112,6 +112,22 @@
 		// nextLoopId = 0;
 	};
 
+	var undoLastLoop = { |dur=0.1|
+		var lastLoopId;
+		lastLoopId = (nextLoopId - 1) % numLoops;
+		isPlaying[lastLoopId].if({
+			"Undo last loop (loop ".post; lastLoopId.post; ").".postln;
+			loopPlayers[lastLoopId].release(dur);
+			isPlaying[lastLoopId] = false;
+			server.makeBundle(dur, {  
+				recBuffers[lastLoopId].zero;
+			});
+			nextLoopId = lastLoopId;
+		},{
+			"Loop ".post;  lastLoopId.post; " already stopped.".post;
+		})
+	};
+
 	var killAllLoops = {
 		stopPlayback.value(0.5);
 		"Stopping all loops.".postln;
@@ -193,6 +209,7 @@
 		stopPlayback: { |event, dur| stopPlayback.value(dur) },
 		stopPlaybackSingleLoop: { stopPlaybackSingleLoop.value },
 		killAllLoops: { killAllLoops.value },
+		undoLastLoop: { |event, dur| undoLastLoop.value(dur) },
 		freeMe: { freeMe.value }
 	);
 }
