@@ -149,7 +149,8 @@
 					// Do not record for more than bufDur seconds.
 					task.stop; task.reset; // this may not be necessary. // Double check.
 					task = Task({
-						bufDur.wait;
+						// Need to convert to beats so that we really wait for bufDur seconds.
+						(TempoClock.tempo * bufDur).wait;
 						recorder.set(\t_trig, 1.0);
 						"Auto stopping loop rec.".postln;
 						NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
