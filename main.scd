@@ -13,7 +13,7 @@
 x = {SinOsc.ar(([54,56,58,60]+12).midicps, 0, 0.1)}.play;
 x = {SinOsc.ar(([60]+12).midicps, 0, 0.1)}.play;
 x.free;
-x = {SinOsc.ar(Array.series(50, 60, 60).clump(2).flop;, 0, 0.1)}.play;
+x = { SinOsc.ar(Array.series(50, 60, 60).clump(2).flop;, 0, 0.1) }.play;
 x.free;
 s.meter;
 
@@ -26,26 +26,28 @@ s.meter;
 (
 {
 	TempoClock.default.tempo_((64.midicps) / 2.pow(7)); // tempo of midinote 64 = 1.2876076441909 bps
-	~scJackName="SuperCollider:out_"; //for Jack connections
-	~scJackNameIn="SuperCollider:in_"; //for Jack connections
-	~reaperInJackName="REAPER:in";
+    // ~scJackName="SuperCollider:out_"; //for Jack connections
+    // ~scJackNameIn="SuperCollider:in_"; //for Jack connections
+    // ~reaperInJackName="REAPER:in";
 
 	// ~rppFilePath = "../signumMix/kamloopsMix.RPP".resolveRelative;
-	~rppFilePath = "../vmmm_jams/vmmm_jams.RPP".resolveRelative;
+	// ~rppFilePath = "../showSurToit_2020-07-24/showSurToit_2020-07-24.RPP".resolveRelative;
+	// ~rppFilePath = "../vmmm_jams/vmmm_jams.RPP".resolveRelative;
+    // ~rppFilePath = "../sos/sos.RPP".resolveRelative;
 
-	"killall reaper".unixCmd; //kill reaper.
+    // "killall reaper".unixCmd; //kill reaper.
 	// "nmcli con up sponger".unixCmd; // Make this computer a hotspot.
 	// "nmcli con up sudafed".unixCmd; // Connect to sudafed
 
 	0.1.wait;
-	("reaper" + ~rppFilePath).unixCmd;
-	"killall jconvolver;".unixCmd;
+    // ("reaper" + ~rppFilePath).unixCmd;
+    // "killall jconvolver;".unixCmd;
 	// "killall zita-rev1;".unixCmd;
 	0.1.wait;
-	"jconvolver -s default -N rvb ~/docs/soundBank/ir/True\\ M7/Halls/amsterdamHall.conf".unixCmd;
+    // "jconvolver -s default -N rvb ~/docs/soundBank/ir/True\\ M7/Halls/amsterdamHall.conf".unixCmd;
 	// "zita-rev1 -name rvb".unixCmd;
 	s.bootSync;
-	"/home/marierm/scripts/jackDisconnectEverything.py".unixCmd;
+    // "/home/marierm/scripts/jackDisconnectEverything.py".unixCmd;
 	"prep/cSponge.scd".loadRelative;
 	"prep/cSimpleSponge.scd".loadRelative;
 	"prep/cLooper.scd".loadRelative;
@@ -55,7 +57,7 @@ s.meter;
 	"prep/cPopper.scd".loadRelative;
 	"prep/cPlayer.scd".loadRelative;
 	"prep/gui.scd".loadRelative;
-	
+
 	s.sync;
 	1.wait;
 	~ipsPrefix = "192.168.109.";
@@ -90,7 +92,7 @@ s.meter;
 		~voices.put( sym, List[] );
 		~voices[sym].add( // add fm synth to voice 0 of each sponge.
 			~cFmManager.value(
-				interpolatorPath: ("fm0*").resolveRelative.pathMatch.sort.last.resolveRelative,
+				interpolatorPath: ("fm0*").resolveRelative.pathMatch.sort.last,
 				cSponge: ~sponges[sym],
 				notes: ([ \en1, \en2, \en3].keynum.mirror2.clump(3)).flat + ~transpose[j],
 				chords: [
@@ -112,6 +114,24 @@ s.meter;
 					[ \dn1, \fn2, \cn3, \an3, \gn2, \bn1, \en1 ].keynum,
 					[ \cn1, \en3, \fn2, \an1, \bn1, \gn2, \dn3 ].keynum
 				],
+                /*				chords: [ // POUR JOUER TOUS LES CRIS LES SOS (Pokemon sur ta DS)
+					[ \en1, \en2, \en3, \en3, \en2, \en1].keynum + ~transpose[j], //
+					[ \an1, \en2, \gn2, \an3, \cn3, \en3].keynum + ~transpose[j], // Am7  0001
+					[ \fn1, \cn2, \fn2, \an2, \cn3, \an3].keynum + ~transpose[j], // F    0010
+					[ \gn1, \dn2, \gn2, \dn3, \bn3, \gn3].keynum + ~transpose[j], // G    0011
+					[ \en1, \bn1, \gn2, \en2, \en3, \gn3].keynum + ~transpose[j], // Em   0100
+					[ \cn1, \cn2, \en2, \gn2, \cn3, \en3].keynum + ~transpose[j], // C    0101
+					[ \gn1, \dn2, \gn2, \dn3, \bn3, \gn3].keynum + ~transpose[j], // G    0110
+					[ \an1, \en2, \gn2, \an3, \cn3, \en3].keynum + ~transpose[j], // Am   0111
+					[ \fn1, \cn2, \fn2, \an2, \en3, \an3].keynum + ~transpose[j], // FM7  1000
+					[ \dn1, \an1, \dn2, \fn2, \an2, \fn3].keynum, // Dm 1001
+					[ \en1, \bn1, \en2, \an2, \bn2, \en3].keynum, // E4 1010
+					[ \en1, \bn1, \en2, \gs2, \bn2, \dn3].keynum, // E7
+					[ \en1, \an2, \gn2, \dn3, \cn1, \fn2, \bn1 ].keynum, //
+					[ \cn1, \bn2, \an3, \fn1, \en1, \gn3, \dn2 ].keynum, //
+					[ \dn1, \fn2, \cn3, \an3, \gn2, \bn1, \en1 ].keynum, //
+					[ \cn1, \en3, \fn2, \an1, \bn1, \gn2, \dn3 ].keynum  //
+				],*/
 				outBus: j * 2,
 				fsrMuteThreshold: [0.85, 0.95][j], // larger number = muting is easier
 				fmId: j + 20,
@@ -120,7 +140,7 @@ s.meter;
 				withLoop: (~classes[j] == ~cSponge)
 			)
 		);
-		
+
 		///////////////
 		s.sync;
 		1.wait;
@@ -222,31 +242,31 @@ s.meter;
 	// 	);
 	// 	~voices.at(sym).do({|i| i.prep});
 	// }.valueEnvir;
-	
-	// Make Jack connections.
-	10.do({ |i|
-		var string;
-		string = "jack_connect" + ~scJackName ++ (i+1) + ~reaperInJackName ++ (i+1);
-		string.unixCmd;
-	});
 
-	"jack_connect REAPER:out1 system:playback_1
+	// Make Jack connections.
+    // 10.do({ |i|
+    //     var string;
+    //     string = "jack_connect" + ~scJackName ++ (i+1) + ~reaperInJackName ++ (i+1);
+    //     string.unixCmd;
+    // });
+
+/*	"jack_connect REAPER:out1 system:playback_1
      jack_connect REAPER:out2 system:playback_2
      jack_connect REAPER:out3 system:playback_3
      jack_connect REAPER:out4 system:playback_4
      jack_connect REAPER:out5 system:playback_5
      jack_connect REAPER:out6 system:playback_6".unixCmd;
-	
+
 	"jack_connect REAPER:out7 rvb:inL
      jack_connect REAPER:out8 rvb:inR
      jack_connect rvb:outL REAPER:in31
-     jack_connect rvb:outR REAPER:in32".unixCmd;
-
+     jack_connect rvb:outR REAPER:in32".unixCmd;*/
+/*
 	2.do({ |i|
 		var string =
 		"jack_connect system:capture_" ++ (i+1) + ~scJackNameIn ++ (i+1);
 		string.unixCmd;
-	});
+	});*/
 
 	~ips.do({ |i,j|
 		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
@@ -266,4 +286,21 @@ s.meter;
 
 .at(~stripes)[fmVoice].octVa;
 ~voices[\stripes_103][0].looper.setQuant(0.5);
-~voices[\stripes_103][0].looper.quant
+~voices[\stripes_103][0].looper.quant;
+
+"prep/gui.scd".loadRelative;
+
+~gui = ~quintetGui.value([103], ["rubik"]);
+
+~gui.window.front;
+
+~gui = "prep/gui.scd".loadRelative;
+
+NetAddr.localAddr.sendMsg("/rubik_103/recor", 0)
+
+OSCFunc({ |msg|
+/*    {
+        octaveViews[i].string_(msg[1].asInteger.asString);
+    }.defer;*/
+    msg.postln;
+}, "" +/+ "moo")

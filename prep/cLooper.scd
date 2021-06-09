@@ -13,7 +13,7 @@
 			server = server ? Server.default;
 			recBuffers = numLoops.collect({
 				Buffer.alloc(
-					server, // add 1 second to allow some latency. 
+					server, // add 1 second to allow some latency.
 					server.sampleRate * (bufDur + lag + 1.0),
 					numChan
 				);
@@ -83,7 +83,7 @@
 			i.release(dur);
 		});
 		isPlaying = Array.fill(numLoops, { false });
-		server.makeBundle(dur, {  
+		server.makeBundle(dur, {
 			recBuffers.do({ |buffer| // zero the buffers;
 				buffer.zero
 			});
@@ -95,7 +95,7 @@
 		isPlaying[nextLoopToStop].if({
 			loopPlayers[nextLoopToStop].release(dur);
 			isPlaying[nextLoopToStop] = false;
-			server.makeBundle(dur, {  
+			server.makeBundle(dur, {
 				recBuffers[nextLoopToStop].zero;
 			});
 			nextLoopToStop = (nextLoopToStop + 1) % numLoops;
@@ -119,7 +119,7 @@
 			"Undo last loop (loop ".post; lastLoopId.post; ").".postln;
 			loopPlayers[lastLoopId].release(dur);
 			isPlaying[lastLoopId] = false;
-			server.makeBundle(dur, {  
+			server.makeBundle(dur, {
 				recBuffers[lastLoopId].zero;
 			});
 			nextLoopId = lastLoopId;
@@ -143,7 +143,7 @@
 				task.stop;
 				task.reset;
 
-				NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
+				NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 0);
 			}.inEnvir, quant);
 			// task.postln;
 		},{
@@ -161,7 +161,7 @@
 					]);
 					isRec = true;
 					"Starting rec on buf ".post; nextLoopId.postln;
-					NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 1);
+					NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 1);
 					// Do not record for more than bufDur seconds.
 					task.stop; task.reset; // this may not be necessary. // Double check.
 					task = Task({
@@ -169,7 +169,7 @@
 						(TempoClock.tempo * bufDur).wait;
 						recorder.set(\t_trig, 1.0);
 						"Auto stopping loop rec.".postln;
-						NetAddr.localAddr.sendMsg("" +/+ defName +/+ "recording", 0);
+						NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 0);
 						isRec = false;
 					}).start;
 				}.inEnvir, quant);

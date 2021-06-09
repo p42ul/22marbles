@@ -7,7 +7,7 @@
 	spongeNames = names.collect({ |i,j|
 		(i ++ "_" ++ ips[j]);
 	});
-	
+
 	octaveViews = ips.collect({|i,j|
 		StaticText().string_("1").align_(\center).font_(Font(nil, 250));
 	});
@@ -32,7 +32,7 @@
 					octaveViews[i].string_(msg[1].asInteger.asString);
 				}.defer;
 				msg.postln;
-			}, "" +/+ spongeName),
+            }, "/" ++ spongeName),
 			OSCFunc({ |msg|
 				(msg[1] == 1).if({
 					{
@@ -44,13 +44,13 @@
 					}.defer;
 				});
 				msg.postln;
-			}, "" +/+ spongeName +/+ "recording");
+			}, "/" ++ spongeName ++ "/recording");
 		]
 	});
-	
+
 	(
 		window: { window },
 		oscFuncs: { oscFuncs }
 	)
-	
+
 };
