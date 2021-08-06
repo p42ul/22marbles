@@ -9,6 +9,10 @@
 // The score
 // What's next?
 
+
+
+
+
 // TEST
 x = {SinOsc.ar(([54,56,58,60]+12).midicps, 0, 0.1)}.play;
 x = {SinOsc.ar(([60]+12).midicps, 0, 0.1)}.play;
@@ -18,6 +22,11 @@ x.free;
 s.meter;
 
 
+30.do({
+    arg i;
+    ~stageCtl.sendMsg("/" ++ "rubik_103" ++ "/looper/" ++ i, "Black");
+});
+
 // Stop playback in harmo modes: does it work?
 // Make option to stop loops in the order they appeared.
 // Find a way to make inheritance.
@@ -25,6 +34,7 @@ s.meter;
 
 (
 {
+    ~stageCtl = NetAddr("localhost", 56666);
 	TempoClock.default.tempo_((64.midicps) / 2.pow(7)); // tempo of midinote 64 = 1.2876076441909 bps
     // ~scJackName="SuperCollider:out_"; //for Jack connections
     // ~scJackNameIn="SuperCollider:in_"; //for Jack connections
@@ -67,7 +77,7 @@ s.meter;
 	~ips = [103, 79];
 	// ~ips = [140];
 	// ~ips = [140, 191];
-	~spongeNames = ["stripes","vero"];
+	~spongeNames = ["rubik","zebra"];
 	// ~classes = [~cSponge, ~cSimpleSponge];
 		~classes = [~cSponge, ~cSponge];
 	// ~classes = [~cSponge];//, ~cSponge];
@@ -137,7 +147,8 @@ s.meter;
 				fmId: j + 20,
 				relTime: 0.2,
 				server: s,
-				withLoop: (~classes[j] == ~cSponge)
+				withLoop: (~classes[j] == ~cSponge),
+                stageCtl: ~stageCtl
 			)
 		);
 
@@ -160,7 +171,7 @@ s.meter;
 		// 		});
 		// 	});
 		// );
-		// sym.post; " ready.".postln;
+		sym.post; " ready.".postln;
 	});
 	// s.sync;
 	// { // add voices to first sponge only.
@@ -272,10 +283,10 @@ s.meter;
 		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
 		~sponges[sym].sponge.hold_(false);
 	});
-	{
-		~gui = ~quintetGui.value(~ips, ~spongeNames);
-		~gui.window.front;
-	}.defer;
+    // {
+    //     ~gui = ~quintetGui.value(~ips, ~spongeNames);
+    //     ~gui.window.front;
+    // }.defer;
 }.fork;
 )
 

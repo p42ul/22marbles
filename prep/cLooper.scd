@@ -1,16 +1,17 @@
 ~cLooper = {
-	arg inBus, id=0, outBus=0, numChan=2, lag=1.0, bufDur=45, numLoops=30, server, defName;
+	arg inBus, id=0, outBus=0, numChan=2, lag=1.0, bufDur=45, numLoops=30, server, defName, stageCtl;
 	var isRec, isPlaying, recBuffers, bus;
 	var recLev = 0.9, preLev = 0.9;
 	var oscFunc, recorder, loopPlayers;
 	var loopDur, nextLoopId=0, task, nextLoopToStop=0;
-	var quant=1.0;
+	var quant=0.5;
 	var prep = {
 		forkIfNeeded {
 			isRec = false;
 			isPlaying = Array.fill(numLoops, { false });
 			loopPlayers = Array.fill(numLoops, nil);
 			server = server ? Server.default;
+            stageCtl = stageCtl ? NetAddr("localhost", 56666);
 			recBuffers = numLoops.collect({
 				Buffer.alloc(
 					server, // add 1 second to allow some latency.
@@ -69,6 +70,7 @@
 					loopPlayers[nextLoopId].set(\loopDur, loopDur);
 					"Set loop dur ".post; nextLoopId.post; " to ".post; loopDur.postln;
 					server.sendBundle(lag, recorder.freeMsg );
+                    stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ nextLoopId, "DarkGreen");
 					isPlaying[nextLoopId] = true;
 					nextLoopId = (nextLoopId + 1) % numLoops;
 				});
@@ -83,6 +85,17 @@
 			i.release(dur);
 		});
 		isPlaying = Array.fill(numLoops, { false });
+        numLoops.do({
+            arg i;
+            stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ i, "Purple");
+        });
+        Task({
+            (TempoClock.tempo * dur).wait;
+            numLoops.do({
+                arg i;
+                stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ i, "Black");
+            });
+        }).start;
 		server.makeBundle(dur, {
 			recBuffers.do({ |buffer| // zero the buffers;
 				buffer.zero
@@ -93,8 +106,17 @@
 
 	var stopPlaybackSingleLoop = { |dur=1|
 		isPlaying[nextLoopToStop].if({
+            var loopToStop;
+            // If we don't store nextLoopToStop in a temp variable, it is changed before the color is
+            // set and the wrong square is colored.
+            loopToStop = nextLoopToStop;
 			loopPlayers[nextLoopToStop].release(dur);
 			isPlaying[nextLoopToStop] = false;
+            stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ loopToStop, "Purple");
+            Task({
+                (TempoClock.tempo * dur).wait;
+                stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ loopToStop, "Black");
+            }).start;
 			server.makeBundle(dur, {
 				recBuffers[nextLoopToStop].zero;
 			});
@@ -119,6 +141,11 @@
 			"Undo last loop (loop ".post; lastLoopId.post; ").".postln;
 			loopPlayers[lastLoopId].release(dur);
 			isPlaying[lastLoopId] = false;
+            stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ lastLoopId, "Purple");
+            Task({
+                (TempoClock.tempo * dur).wait;
+                stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ lastLoopId, "Black");
+            }).start;
 			server.makeBundle(dur, {
 				recBuffers[lastLoopId].zero;
 			});
@@ -135,18 +162,17 @@
 
 	var toggleRec = {
 		// isPlaying.not.if({
-		isRec.if({
+		isRec.if({ // If we are currently recording, stop recording
 			TempoClock.play({
 				recorder.set(\t_trig, 1.0);
 				"Stop rec loop ".post; nextLoopId.postln;
 				isRec = false;
 				task.stop;
 				task.reset;
-
 				NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 0);
 			}.inEnvir, quant);
 			// task.postln;
-		},{
+		},{ // if we are not current recording
 			isPlaying[nextLoopId].if({
 				"Trying to record loop num ".post; nextLoopId.post;
 				", but it is already playing.".postln;
@@ -162,6 +188,7 @@
 					isRec = true;
 					"Starting rec on buf ".post; nextLoopId.postln;
 					NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 1);
+                    stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ nextLoopId, "Red");
 					// Do not record for more than bufDur seconds.
 					task.stop; task.reset; // this may not be necessary. // Double check.
 					task = Task({
@@ -170,6 +197,7 @@
 						recorder.set(\t_trig, 1.0);
 						"Auto stopping loop rec.".postln;
 						NetAddr.localAddr.sendMsg("/" ++ defName ++ "/recording", 0);
+                        stageCtl.sendMsg("/" ++ defName ++ "/looper/" ++ nextLoopId, "black");
 						isRec = false;
 					}).start;
 				}.inEnvir, quant);

@@ -2,7 +2,7 @@
 // Needs a path to an interpolator, a sponge, list of notes and list of chords.
 
 ~cFmManager = {
-	arg interpolatorPath, cSponge, notes, chords, outBus=0, fsrMuteThreshold=0.85, fmId=20, relTime=0.2, server, withLoop=true;
+	arg interpolatorPath, cSponge, notes, chords, outBus=0, fsrMuteThreshold=0.85, fmId=20, relTime=0.2, server, withLoop=true, stageCtl;
 	var interpolator, frozen = false, numInterpolatorDim = 6, numAccelAxes = 6;
 	var numFSR = 2, numNotes;
 	var ampBus, globalAmpBus, group, inputs, damper, ampExtractor, globalAmp;
@@ -19,6 +19,7 @@
 	};
 
 	var prep = {
+        stageCtl = stageCtl ? NetAddr("localhost", 56666);
 		server = server ? Server.default;
 		interpolator = PresetInterpolatorServer.newLoad( interpolatorPath );
 		notes = notes ? ([ \en1, \en2, \bn2].keynum.mirror2.clump(3)).flat;
@@ -73,14 +74,14 @@
 		//  3. Pitch bend: ~pbBus (in semitones)
 		//  4. Fine pitch variations from interpolator: ~interpolFreqs
 
-		// ~freqBuses hold the resultant.  
+		// ~freqBuses hold the resultant.
 		SynthDef(\pitcherFm, {
 			arg out = 0, bendRange=2;
 			var base, offset, bend, interpol, freqs;
 			base = NamedControl.kr(\base, notes);
 			offset = NamedControl.kr(\offset, 0);
 			bend = NamedControl.kr(\bend, 0);
-			bend = bend.linlin(-pi, pi, bendRange * -1, bendRange); 
+			bend = bend.linlin(-pi, pi, bendRange * -1, bendRange);
 			interpol = NamedControl.kr(
 				\interpol, [0,0,0,0,0,0]
 			) * NamedControl.kr(
@@ -125,10 +126,10 @@
 		damperInB = sponge[\fsr2].bus;
 		pitchOsBus = Bus.control(server, 1);
 		freqBuses = Bus.control(server, notes.size);
-		
+
 		looperBus = Bus.audio(server, 2);
 		looperXfade = 1.0;
-		withLoop.if{ // If this is the master, allow loops.
+		withLoop.if{
 			myLooper = ~cLooper.value(
 				inBus: looperBus,
 				id: fmId,
@@ -136,7 +137,8 @@
 				numChan: 2,
 				lag: looperXfade,
 				server: server,
-				defName: defName
+				defName: defName,
+                stageCtl: stageCtl
 			);
 			myLooper.prep;
 		};
@@ -152,7 +154,7 @@
 		numInterpolatorDim.do({ |i|
 			interpolator.connect( i, sponge.features[i] );
 		});
-		
+
 		// Amplitude control stuff
 		inputs = [
 			\acc1xHP, \acc1yHP, \acc1zHP,
@@ -200,7 +202,7 @@
 			pitcher.map( *
 				numNotes.collect({|i|
 					[interpolId + i , interpolator.cursor.parameters[i*2].bus]
-				}).flat;			
+				}).flat;
 			);
 			fm = Synth.after(pitcher, \fm, [
 				// \out, ~bus.index,
@@ -210,7 +212,7 @@
 			]);
 
 			fm.map( \amps, ampBus);
-			
+
 			// Map output of pitcher to fm freqs.
 			fm.map( *
 				notes.size.collect({|i|
@@ -239,7 +241,7 @@
 			pitcher.map( *
 				notes.size.collect({|i|
 					[interpolId + i , interpolator.cursor.parameters[i*2].bus]
-				}).flat;			
+				}).flat;
 			);
 
 
@@ -250,6 +252,7 @@
 			NodeWatcher.register(fm);
 
 			NetAddr.localAddr.sendMsg("/" ++ defName, notes[0].noteOctave );
+            stageCtl.sendMsg("/" ++ defName, notes[0].noteOctave );
 		});
 	};
 	var freezeMe = {
@@ -270,6 +273,7 @@
 		pitcher.set(\base, notes);
 		changed.value(\octave, notes[0].noteOctave);
 		NetAddr.localAddr.sendMsg("/" ++ defName, notes[0].noteOctave );
+        stageCtl.sendMsg("/" ++ defName, notes[0].noteOctave );
 	};
 	var octVb = {
 		notes = notes - 12;
@@ -277,6 +281,7 @@
 		pitcher.set(\base, notes);
 		changed.value(\octave, notes[0].noteOctave);
 		NetAddr.localAddr.sendMsg("/" ++ defName, notes[0].noteOctave );
+        stageCtl.sendMsg("/" ++ defName, notes[0].noteOctave );
 	};
 	var octTmp = { |oct|
 		pitcher.set(\base, notes + (12 * oct));
@@ -285,12 +290,14 @@
 		notes = ([ \en1, \en2, \en3].keynum.mirror2.clump(3)).flat + (0 * 12);
 		pitcher.set(\base, notes);
 		NetAddr.localAddr.sendMsg("/" ++ defName, notes[0].noteOctave );
+        stageCtl.sendMsg("/" ++ defName, notes[0].noteOctave );
 	};
 	var setChord = { |id|
 		notes = chords.clipAt(id);
 		pitcher.set(\base, notes);
 		changed.value(\chord, notes.note);
 		NetAddr.localAddr.sendMsg("/" ++ defName, notes[0].noteOctave );
+        stageCtl.sendMsg("/" ++ defName, notes[0].noteOctave );
 	};
 	var stopMe = {
 		numInterpolatorDim.do({ |i|
