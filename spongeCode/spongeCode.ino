@@ -25,8 +25,13 @@ const byte ESC_ESC=221;
 const char* ssid     = "fpTubeRouter-2.4";
 const char* password = "=OKI/*$9-W";
 
+//const char* ssid     = "spot";
+//const char* password = "superspot";
+
+
 WiFiUDP udp; // A UDP instance to let us send and receive packets over UDP
 const IPAddress outIp(192,168,109,74); // remote IP of your computer
+// const IPAddress outIp(192,168,137,1); // remote IP for multicast
 // const IPAddress outIp(224,0,0,1); // remote IP for multicast
 // const IPAddress outIp(10,42,0,1); // remote IP of your computer
 const unsigned int outPort = 50501; // remote port to receive OSC
