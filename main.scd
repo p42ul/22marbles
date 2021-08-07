@@ -21,20 +21,17 @@ x = { SinOsc.ar(Array.series(50, 60, 60).clump(2).flop;, 0, 0.1) }.play;
 x.free;
 s.meter;
 
-
-30.do({
-    arg i;
-    ~stageCtl.sendMsg("/" ++ "rubik_103" ++ "/looper/" ++ i, "Black");
-});
-
 // Stop playback in harmo modes: does it work?
 // Make option to stop loops in the order they appeared.
 // Find a way to make inheritance.
 
-
 (
 {
     ~stageCtl = NetAddr("localhost", 56666);
+    ~stageCtlPath = "C:/Users/User/bin/open-stage-control/";
+    (~stageCtlPath ++ "open-stage-control.exe -- --port 8000 --send localhost:57120 --osc-port 56666 --load " ++ "stageDisplay.json".resolveRelative).unixCmd;
+
+
 	TempoClock.default.tempo_((64.midicps) / 2.pow(7)); // tempo of midinote 64 = 1.2876076441909 bps
     // ~scJackName="SuperCollider:out_"; //for Jack connections
     // ~scJackNameIn="SuperCollider:in_"; //for Jack connections
