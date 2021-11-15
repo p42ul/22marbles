@@ -6,6 +6,16 @@
 #include <OSCMessage.h>
 #include <OSCBundle.h>
 #include <OSCData.h>
+
+
+/*
+ * Libraries required:
+ * https://github.com/sparkfun/SparkFun_LSM6DS3_Arduino_Library
+ * https://www.arduino.cc/en/Reference/WiFi101
+ * https://github.com/CNMAT/OSC
+ */
+
+
 void SLIPSerialWrite(int value);
 void sendSpongeOSC();
 void initAccelGyro();
@@ -16,26 +26,20 @@ const byte ESC=219;
 const byte ESC_END=220;
 const byte ESC_ESC=221;
 
-// const char* ssid     = "martinOSC";
-// const char* password = "";
-// const char* ssid     = "mmLinksysEA7500-2.4";
-// const char* ssid     = "sideroxylon";
-// const char* password = "ddcgrvc4zw";
-
-const char* ssid     = "fpTubeRouter-2.4";
-const char* password = "=OKI/*$9-W";
+const char* ssid     = "tstick_network";
+const char* password = "mappings";
 
 //const char* ssid     = "spot";
 //const char* password = "superspot";
 
 
 WiFiUDP udp; // A UDP instance to let us send and receive packets over UDP
-const IPAddress outIp(192,168,109,74); // remote IP of your computer
+const IPAddress outIp(192,168,1,102); // remote IP of your computer
 // const IPAddress outIp(192,168,137,1); // remote IP for multicast
 // const IPAddress outIp(224,0,0,1); // remote IP for multicast
 // const IPAddress outIp(10,42,0,1); // remote IP of your computer
-const unsigned int outPort = 50501; // remote port to receive OSC
-const unsigned int localPort = 50502; // local port to listen for OSC packets
+const unsigned int outPort = 8000; // remote port to receive OSC
+const unsigned int localPort = 8001; // local port to listen for OSC packets
 
 
 // const int butPins[10] = { 0,1,20,21,5,6,9,10,11,12 };
@@ -202,29 +206,23 @@ void initAccelGyro(){
 
 void sendSpongeOSC() {
   int compButVal=0; // composed into a single 32 bit integer (only 10 are used).
-
-  OSCMessage msg("/sponge"); // 8 bytes
-  // OSCMessage time("/time");
-  // uint64_t timetag;
-  // msg.add(anal0);
-  // types are ,iiiiiiiiiiiii // 4 bytes
-  msg.add(int(SensorOne.readRawAccelX())); // int 0
-  msg.add(int(SensorOne.readRawAccelY())); // int 1
-  msg.add(int(SensorOne.readRawAccelZ())); // int 2
-  // msg.add(int(SensorOne.readRawGyroX()));
-  // msg.add(int(SensorOne.readRawGyroY()));
-  // msg.add(int(SensorOne.readRawGyroZ()));
-  msg.add(int(SensorTwo.readRawAccelX())); // int 3
-  msg.add(int(SensorTwo.readRawAccelY())); // int 4
-  msg.add(int(SensorTwo.readRawAccelZ())); // int 5
-  // msg.add(int(SensorTwo.readRawGyroX()));
-  // msg.add(int(SensorTwo.readRawGyroY()));
-  // msg.add(int(SensorTwo.readRawGyroZ()));
-  for (int i=0; i < 2; i ++){ // ints 6 and 7
-    msg.add(int(analogRead(i)));
-  };
-
-
+  OSCMessage acc1x("/sponge/acc1x");
+  OSCMessage acc1y("/sponge/acc1y");
+  OSCMessage acc1z("/sponge/acc1z");
+  OSCMessage acc2x("/sponge/acc2x");
+  OSCMessage acc2y("/sponge/acc2y");
+  OSCMessage acc2z("/sponge/acc2z");
+  OSCMessage fsr1("/sponge/fsr1");
+  OSCMessage fsr2("/sponge/fsr2");
+  OSCMessage buttons("/sponge/buttons");
+  acc1x.add(int(SensorOne.readRawAccelX()));
+  acc1y.add(int(SensorOne.readRawAccelY()));
+  acc1z.add(int(SensorOne.readRawAccelZ()));
+  acc2x.add(int(SensorTwo.readRawAccelX()));
+  acc2y.add(int(SensorTwo.readRawAccelY())); // int 4
+  acc2z.add(int(SensorTwo.readRawAccelZ())); // int 5
+  fsr1.add(int(analogRead(0)));
+  fsr2.add(int(analogRead(1)));
   for (int i=0; i < 10; i ++){
     compButVal |= ( digitalRead(butPins[i]) << (9-i));
     /* La ligne prÃ©cÃ©dente place les valeurs binaires de chacun des boutons
@@ -233,15 +231,20 @@ void sendSpongeOSC() {
        Dans ce cas, les boutons 0,3,4,6 et 9 sont enfoncÃ©s.
     */
   };
+  buttons.add(compButVal ^ 1023); // 4 bytes  (^ is a bitwise XOR)
+  sendOSC(acc1x);
+  sendOSC(acc1y);
+  sendOSC(acc1z);
+  sendOSC(acc2x);
+  sendOSC(acc2y);
+  sendOSC(acc2z);
+  sendOSC(fsr1);
+  sendOSC(fsr2);
+  sendOSC(buttons);
+}
 
-  msg.add(compButVal ^ 1023); // 4 bytes  (^ is a bitwise XOR)
-
-  // bndl.add("/sponge").add("one");
-  // msg.add(1).add(2).add(3).add(4).add(5).add(6).add(7).add(8).add(9).add(10).add(11).add(12); // 48 bytes of arbitrary ints.
-  // Total size is 64 bytes. (excluding the UDP packet stuff)
-  // time.add((uint32_t)micros() & 0xFFFF);
+void sendOSC(OSCMessage msg) {
   udp.beginPacket(outIp, outPort);
-  // bndl.setTimetag(oscTime());
   msg.send(udp);
   udp.endPacket();
   msg.empty();
